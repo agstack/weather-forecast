@@ -228,6 +228,7 @@ end_time = datetime.datetime.now()
 print('\n********** Total Elapsed: '+str(end_time - start_time))
 print('###########################')
 
+"""
 print('Entering info into DB')
 frct_dt = datetime.datetime.strptime(frct_dtStr, '%Y%m%d_%H%M%S')
 #list of ncfiles
@@ -237,3 +238,4 @@ time_dim = len(list_of_ncfiles)
 ncfiles_df = pd.DataFrame(columns=['UPDATE_DATE','FILES'])
 ncfiles_df['FILES']=list_of_ncfiles
 ncfiles_df['UPDATE_DATE']=frct_dt
+"""
