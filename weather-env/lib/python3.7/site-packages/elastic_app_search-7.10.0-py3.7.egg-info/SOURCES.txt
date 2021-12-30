@@ -1,0 +1,15 @@
+LICENSE.txt
+MANIFEST.in
+README.md
+setup.cfg
+setup.py
+elastic_app_search/__init__.py
+elastic_app_search/__version__.py
+elastic_app_search/client.py
+elastic_app_search/exceptions.py
+elastic_app_search/request_session.py
+elastic_app_search.egg-info/PKG-INFO
+elastic_app_search.egg-info/SOURCES.txt
+elastic_app_search.egg-info/dependency_links.txt
+elastic_app_search.egg-info/requires.txt
+elastic_app_search.egg-info/top_level.txt

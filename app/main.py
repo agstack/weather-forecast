@@ -35,6 +35,8 @@ from pathlib import Path
 
 ############ globals
 outDir = '/home/sumer/my_project_dir/ncep/'
+#outDir = '/root/ncep/data/'
+
 list_of_ncfiles = [x for x in os.listdir(outDir) if x.endswith('.nc')]
 list_of_ncfiles.sort()
 time_dim = len(list_of_ncfiles)
@@ -63,40 +65,44 @@ forecastEndDtDisplay = datetime.datetime.strftime(forecastEndDt, '%Y-%m-%dT%H%M%
 
 i=0
 for varName in varList:
-	tm_arr = []
-	print('Reading data for :'+varName)
-	j=0
-	for f in list_of_ncfiles:
-		#f = '20211209_000000__20211212_210000__093___gfs.t00z.pgrb2.0p25.f093.grb2.nc'
-		
-		ncin = Dataset(outDir+f, "r")
+	try:
+		tm_arr = []
+		print('Reading data for :'+varName)
+		j=0
+		for f in list_of_ncfiles:
+			#f = '20211209_000000__20211212_210000__093___gfs.t00z.pgrb2.0p25.f093.grb2.nc'
+			
+			ncin = Dataset(outDir+f, "r")
 
-		titleStr = varDict[varName]
-		var_mat = ncin.variables[varName][:]
+			titleStr = varDict[varName]
+			var_mat = ncin.variables[varName][:]
 
-		if 'Temp' in titleStr:
-			var_val = var_mat.squeeze() - 273.15 #convert to DegC
+			if 'Temp' in titleStr:
+				var_val = var_mat.squeeze() - 273.15 #convert to DegC
+			else:
+				var_val = var_mat.squeeze()
+			lons = ncin.variables['longitude'][:]
+			lats = ncin.variables['latitude'][:]
+			tms = ncin.variables['time'][:]
+			#tmstmpStr = datetime.datetime.fromtimestamp(tm.data[0]).strftime('%Y%m%d%H%M%S')
+
+			if j>0:
+				var_val3D = np.dstack((var_val3D,var_val.data))
+			else:
+				var_val3D = var_val.data
+			tm_arr.append(tms.data[0])
+
+			ncin.close()
+			j=j+1
+		if i>0:
+			var_val3D_rshp = np.reshape(var_val3D , (720,1440,time_dim,1))
+			var_val4D = np.append( var_val3D_rshp , var_val4D , axis = 3)
 		else:
-			var_val = var_mat.squeeze()
-		lons = ncin.variables['longitude'][:]
-		lats = ncin.variables['latitude'][:]
-		tms = ncin.variables['time'][:]
-		#tmstmpStr = datetime.datetime.fromtimestamp(tm.data[0]).strftime('%Y%m%d%H%M%S')
-
-		if j>0:
-			var_val3D = np.dstack((var_val3D,var_val.data))
-		else:
-			var_val3D = var_val.data
-		tm_arr.append(tms.data[0])
-
-		ncin.close()
-		j=j+1
-	if i>0:
-		var_val3D_rshp = np.reshape(var_val3D , (720,1440,time_dim,1))
-		var_val4D = np.append( var_val3D_rshp , var_val4D , axis = 3)
-	else:
-		var_val4D = np.reshape(var_val3D , (720,1440,time_dim,1))
-	i=i+1
+			var_val4D = np.reshape(var_val3D , (720,1440,time_dim,1))
+		i=i+1
+	except Exception as e:
+		print([e, i, j])
+		continue
 
 def getWeatherForecastVars():
 	weatherForecastVars = {}

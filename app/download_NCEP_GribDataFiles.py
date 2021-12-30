@@ -25,7 +25,7 @@ from geoalchemy2.shape import to_shape
 from sqlalchemy import create_engine
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import *
-
+from datetime import timedelta 
 
 ### GLOBALS
 #get the latest date
@@ -102,6 +102,14 @@ varDict = {'TMP_2maboveground': 'Air Temp [C] (2 m above surface)',
 		   'SOILW_0D1M0D4mbelowground':'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground',
 		   'CRAIN_surface':'Rainfall Probability',
 		  }
+def getGribFileName():
+    utcDt = datetime.datetime.utcnow()
+    utcDtOffset = pd.Timestamp.now().round('360min').tz_localize('UTC').to_pydatetime() 
+    
+    CC = str(utcDtOffset.hour).zfill(2)
+    dtStr = datetime.datetime.strftime(utcDtOffset,'%Y%m%d')
+    
+    return dtStr, [CC]
 
 def getAPIVals(varDict, list_of_ncfiles, lon, lat):
 	
@@ -164,11 +172,13 @@ ll=[str(x) for x in links if str(x).startswith('<a href=\"gfs.')]
 lastDtStr = ll[-1].split('gfs.')[1][0:8]
 
 
-dtStr = lastDtStr
-CC_list = ['00'] #For now, just do once a day
+#dtStr = lastDtStr
+#CC_list = ['00'] #For now, just do once a day
 #,'06','12','18']
 FFF_list = [str(i).zfill(3) for i in range(0,151)]
-start_time = datetime.datetime.now()
+#start_time = datetime.datetime.now()
+
+dtStr, CC_list = getGribFileName()
 
 #remove all the files from the directory
 if any(fname.endswith('.nc') for fname in os.listdir(outDir)):
@@ -228,6 +238,7 @@ end_time = datetime.datetime.now()
 print('\n********** Total Elapsed: '+str(end_time - start_time))
 print('###########################')
 
+"""
 print('Entering info into DB')
 frct_dt = datetime.datetime.strptime(frct_dtStr, '%Y%m%d_%H%M%S')
 #list of ncfiles
@@ -237,3 +248,4 @@ time_dim = len(list_of_ncfiles)
 ncfiles_df = pd.DataFrame(columns=['UPDATE_DATE','FILES'])
 ncfiles_df['FILES']=list_of_ncfiles
 ncfiles_df['UPDATE_DATE']=frct_dt
+"""
