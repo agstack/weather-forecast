@@ -31,10 +31,16 @@ import folium
 import ftplib
 from ftplib import FTP
 from pathlib import Path
+from os import path, walk
 
 
 ############ globals
 outDir = '/home/sumer/my_project_dir/ncep/'
+updated_data_available_file = '/home/sumer/weather/weather-forecast/updated_data_available.txt'
+
+#outDir = '/root/ncep/data/'
+#updated_data_available_file = '/root/ncep/scripts/updated_data_available.txt'
+
 list_of_ncfiles = [x for x in os.listdir(outDir) if x.endswith('.nc')]
 list_of_ncfiles.sort()
 time_dim = len(list_of_ncfiles)
@@ -245,4 +251,16 @@ def weatherForecast():
 
 #main to run the app
 if __name__ == '__main__':
-	app.run(host='0.0.0.0' , port=5000, debug=True)
+	extra_files = [updated_data_available_file,]
+	"""
+	#For auto-reload if anyhing changes in the entire directory do the following:
+	extra_dirs = [outDir,]
+	extra_files = extra_dirs[:]
+	for extra_dir in extra_dirs:
+		for dirname, dirs, files in walk(extra_dir):
+			for filename in files:
+				filename = path.join(dirname, filename)
+				if path.isfile(filename):
+					extra_files.append(filename)
+	"""
+	app.run(host='0.0.0.0' , port=5000, debug=True, extra_files=extra_files)

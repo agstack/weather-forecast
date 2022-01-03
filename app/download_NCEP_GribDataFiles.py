@@ -30,7 +30,12 @@ from sqlalchemy import *
 ### GLOBALS
 #get the latest date
 rootUrl = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/'
+
 outDir = '/home/sumer/my_project_dir/ncep/'
+updated_data_available_file = '/home/sumer/weather/weather-forecast/updated_data_available.txt'
+
+#outDir = '/root/ncep/data/'
+#updated_data_available_file = '/root/ncep/scripts/updated_data_available.txt'
 
 
 
@@ -102,6 +107,14 @@ varDict = {'TMP_2maboveground': 'Air Temp [C] (2 m above surface)',
 		   'SOILW_0D1M0D4mbelowground':'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground',
 		   'CRAIN_surface':'Rainfall Probability',
 		  }
+def getGribFileName():
+    utcDt = datetime.datetime.utcnow()
+    utcDtOffset = pd.Timestamp.now().round('360min').tz_localize('UTC').to_pydatetime() - datetime.timedelta(hours=6) 
+    
+    CC = str(utcDtOffset.hour).zfill(2)
+    dtStr = datetime.datetime.strftime(utcDtOffset,'%Y%m%d')
+    
+    return dtStr, [CC]
 
 def getAPIVals(varDict, list_of_ncfiles, lon, lat):
 	
@@ -164,11 +177,12 @@ ll=[str(x) for x in links if str(x).startswith('<a href=\"gfs.')]
 lastDtStr = ll[-1].split('gfs.')[1][0:8]
 
 
-dtStr = lastDtStr
-CC_list = ['00'] #For now, just do once a day
+#dtStr = lastDtStr
+#CC_list = ['00'] #For now, just do once a day
 #,'06','12','18']
 FFF_list = [str(i).zfill(3) for i in range(0,151)]
 start_time = datetime.datetime.now()
+dtStr, CC_list = getGribFileName()
 
 #remove all the files from the directory
 if any(fname.endswith('.nc') for fname in os.listdir(outDir)):
@@ -223,7 +237,13 @@ for CC in CC_list:
             print('Error in CC='+CC+', FFF='+FFF)
             continue
                   
-                  
+   
+#touch file
+print('\nWriting updated_data_available.txt file')
+cmd_complete = 'touch '+updated_data_available_file
+os.system(cmd_complete)
+print('Done!')
+
 end_time = datetime.datetime.now()                  
 print('\n********** Total Elapsed: '+str(end_time - start_time))
 print('###########################')
