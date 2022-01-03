@@ -6,7 +6,7 @@ from sqlalchemy import *
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import psycopg2 as pg
+#import psycopg2 as pg
 import json 
 import leaflet as L
 from elastic_app_search import Client
@@ -112,10 +112,10 @@ for varName in varList:
 def fixToLocalTime(df,lat,lon):
 	tf = timezonefinder.TimezoneFinder()
 	# From the lat/long, get the tz-database-style time zone name (e.g. 'America/Vancouver') or None
-	timezone_str = tf.certain_timezone_at(lat=lat, lng=lon)
+	timezone_str = tf.certain_timezone_at(lat=float(lat), lng=float(lon))
 	timezone = pytz.timezone(timezone_str)
 
-	df['FORECAST_DATE_LOCAL'] = df.FORECAST_DATE_UTC + timezone.utcoffset(df.FORECAST_DATE_UTC)
+	df['FORECAST_DATE_LOCAL']=df.FORECAST_DATE_UTC.apply(lambda x: x + timezone.utcoffset(x))
 	
 	return df
 
@@ -210,10 +210,13 @@ def weatherForecast():
 		weatherForcast_df = get4DWeatherForecast(lon, lat)
 		localWeatherForcast_df = fixToLocalTime(weatherForcast_df,lat,lon)
 
-		geolocator = Nominatim(user_agent="myGeolocator")
-		locStr = geolocator.reverse(str(lat)+","+str(lon))
-		tok = locStr.address.split(' ')
-		loc = ' '.join(tok[3:])
+		try:  #try and get a location, if not, then just report on lat, lon
+			geolocator = Nominatim(user_agent="myGeolocator")
+			locStr = geolocator.reverse(str(lat)+","+str(lon))
+			tok = locStr.address.split(' ')
+			loc = ' '.join(tok[3:])
+		except:
+			loc='Lat='+lat+', Lon='+lon
 
 		#Make the various graphs
 		varName = 'Air Temp [C] (2 m above surface)'
@@ -253,12 +256,11 @@ def weatherForecast():
 		if (returnType=='json'):
 			res = jsonify(weatherForcast_df.to_dict(orient='records'))
 		else:
-			localWeatherForcast_df = fixToLocalTime(weatherForcast_df,lat,lon)
 			res = render_template('forecast.html', 
-				airTempJSON=airTempGraph,
-				soilTempJson=soilTempGraph,
-				soilMoistureJson=soilMoistureGraph,
-				rainBoolJson=rainBoolGraph
+				airTempGraph=airTempGraph,
+				soilTempGraph=soilTempGraph,
+				soilMoistureGraph=soilMoistureGraph,
+				rainBoolGraph=rainBoolGraph
 				)
 	else:
 		res = "{'Error': 'WeatherForecast function returned no data'}"
