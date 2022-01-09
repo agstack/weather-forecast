@@ -36,6 +36,27 @@
     <div id="RainfallBool" class="chart">
     </div>
  
+    <div id="Precip" class="chart">
+    </div>
+
+    <div id="RelativeHumidity" class="chart">
+    </div>
+
+    <div id="DewPoint" class="chart">
+    </div>
+
+    <div id="MSLPressure" class="chart">
+    </div>
+
+    <div id="Pressure" class="chart">
+    </div>
+
+    <div id="WindSpeed" class="chart">
+    </div>
+
+    <div id="CloudCover" class="chart">
+    </div>
+
 </body>
  
     <!-- D3.js -->
@@ -64,7 +85,41 @@
         var graphs = {{rainBoolGraph | safe}};
         Plotly.plot('RainfallBool',graphs,{});
     </script>
-    
+
+    <script type="text/javascript">
+        var graphs = {{precipGraph | safe}};
+        Plotly.plot('Precip',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{relativeHumidityGraph | safe}};
+        Plotly.plot('RelativeHumidity',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{dewPointGraph | safe}};
+        Plotly.plot('DewPoint',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{mslPressureGraph | safe}};
+        Plotly.plot('MSLPressure',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{pressureGraph | safe}};
+        Plotly.plot('Pressure',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{windSpeedGraph | safe}};
+        Plotly.plot('WindSpeed',graphs,{});
+    </script>
+
+    <script type="text/javascript">
+        var graphs = {{cloudCoverGraph | safe}};
+        Plotly.plot('CloudCover',graphs,{});
+    </script>
  
 </html>
 

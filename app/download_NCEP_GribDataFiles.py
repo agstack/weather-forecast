@@ -99,14 +99,25 @@ var21 = ':SOTYP:surface:'
 #Categorical Rain [-] (3 hr forecast)
 var22 = ':CRAIN:surface:'
 
-varStr = var1+'|'+var2+'|'+var3+'|'+var4+'|'+var5+'|'+var6+'|'+var7+'|'+var8+'|'+var9+'|'+var10+'|'+var11+'|'+var12+'|'+var13+'|'+var14+'|'+var15+'|'+var16+'|'+var17+'|'+var18+'|'+var19+'|'+var20+'|'+var21+'|'+var22
+#Precipitation Rate [kg/m^2/s]
+var23 = ':PRATE:surface:'
+
+varStr = var1+'|'+var2+'|'+var3+'|'+var4+'|'+var5+'|'+var6+'|'+var7+'|'+var8+'|'+var9+'|'+var10+'|'+var11+'|'+var12+'|'+var13+'|'+var14+'|'+var15+'|'+var16+'|'+var17+'|'+var18+'|'+var19+'|'+var20+'|'+var21+'|'+var22+'|'+var23
 
 ###############################################
-varDict = {'TMP_2maboveground': 'Air Temp [C] (2 m above surface)',
-		   'TSOIL_0D1M0D4mbelowground':'Soil Temperature [C] - 0.1-0.4 m below ground',
-		   'SOILW_0D1M0D4mbelowground':'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground',
-		   'CRAIN_surface':'Rainfall Probability',
+varDict = {var2: 'Air Temp [C] (2 m above surface)',
+		   var4: 'Soil Temperature [C] - 0.1-0.4 m below ground',
+		   var8: 'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground',
+		   var22: 'Rainfall Probability',
+		   var23: 'Precipitation Rate [kg/m^2/s]',
+		   var1: 'Relative Humidity [%]',
+		   var12: 'Dew Point Temperature [C]',
+		   var13: 'Pressure Reduced to MSL [Pa]',
+		   var14: 'Pressure [Pa]',
+		   var15: 'Wind Speed (Gust) [m/s]',
+		   var16: 'Total Cloud Cover [%]',
 		  }
+
 def getGribFileName():
     utcDt = datetime.datetime.utcnow()
     utcDtOffset = pd.Timestamp.now().round('360min').tz_localize('UTC').to_pydatetime() - datetime.timedelta(hours=6) 
