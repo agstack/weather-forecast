@@ -49,11 +49,11 @@ def fixVarName(varName):
 	return newVarName
 
 ############ globals
-outDir = '/home/sumer/my_project_dir/ncep/'
-updated_data_available_file = '/home/sumer/weather/weather-forecast/updated_data_available.txt'
+#outDir = '/home/sumer/my_project_dir/ncep/'
+#updated_data_available_file = '/home/sumer/weather/weather-forecast/updated_data_available.txt'
 
-#outDir = '/root/ncep/data/'
-#updated_data_available_file = '/root/ncep/scripts/updated_data_available.txt'
+outDir = '/root/ncep/data/'
+updated_data_available_file = '/root/ncep/scripts/updated_data_available.txt'
 
 list_of_ncfiles = [x for x in os.listdir(outDir) if x.endswith('.nc')]
 list_of_ncfiles.sort()
