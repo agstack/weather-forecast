@@ -1,3 +1,6 @@
 weather-env
 weather_env
 app/__pycache__/
+/.idea
+venv
+.env

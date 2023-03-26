@@ -1,45 +1,16 @@
 from flask import Flask, render_template, jsonify, request, url_for
-from shapely.geometry import Point as Shapely_point, mapping
-from geojson import Point as Geoj_point, Polygon as Geoj_polygon, Feature, FeatureCollection
 from datetime import datetime
-from sqlalchemy import *
 import pandas as pd
-import geopandas as gpd
 import numpy as np
-#import psycopg2 as pg
-import json 
-import leaflet as L
-from elastic_app_search import Client
-from elasticsearch import Elasticsearch
-from elasticapm.contrib.flask import ElasticAPM
-import matplotlib.colors as cl
-import h3
-import h3.api.basic_int as h3int
 import json
-import h3pandas
-import cmasher as cmr
 import plotly
-import plotly.express as px
-from scipy.stats import percentileofscore
-from scipy import stats
-import plotly.graph_objects as go
-import os 
+import os
 import datetime
 from netCDF4 import Dataset
-import shapely.wkt
-import folium
-import ftplib
-from ftplib import FTP
-from pathlib import Path
-from os import path, walk
-
 import timezonefinder, pytz
 import plotly.express as px
-import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
-import math
 
-#from models import *
 
 def fixVarName(varName):
 	newVarName = str(varName[1:-1])
@@ -52,8 +23,8 @@ def fixVarName(varName):
 #outDir = '/home/sumer/my_project_dir/ncep/'
 #updated_data_available_file = '/home/sumer/weather/weather-forecast/updated_data_available.txt'
 
-outDir = '/root/ncep/data/'
-updated_data_available_file = '/root/ncep/scripts/updated_data_available.txt'
+outDir = os.getenv('outDir')
+updated_data_available_file = os.getenv('updated_data_available_file')
 
 list_of_ncfiles = [x for x in os.listdir(outDir) if x.endswith('.nc')]
 list_of_ncfiles.sort()
@@ -151,14 +122,14 @@ var_val3D = []
 var_val4D = []
 #NOTE: the variable are in opposite order var_val4D[lat, lon, forecast_time_index, 0/1/2/3, where 0=CRAIN, 1=SOILW... etc]
 
-updatedDtStr = list_of_ncfiles[0].split('__')[0]
-updatedDt = datetime.datetime.strptime(updatedDtStr,'%Y%m%d_%H%M%S')
-updatedDtDisplay = datetime.datetime.strftime(updatedDt, '%Y-%m-%dT%H%M%S')
+# updatedDtStr = list_of_ncfiles[0].split('__')[0]
+# updatedDt = datetime.datetime.strptime(updatedDtStr,'%Y%m%d_%H%M%S')
+# updatedDtDisplay = datetime.datetime.strftime(updatedDt, '%Y-%m-%dT%H%M%S')
 
 #get the forecast end dt
-forecastEndDtStr = list_of_ncfiles[-1].split('__')[1].split('__')[0]
-forecastEndDt = datetime.datetime.strptime(forecastEndDtStr,'%Y%m%d_%H%M%S')
-forecastEndDtDisplay = datetime.datetime.strftime(forecastEndDt, '%Y-%m-%dT%H%M%S')
+# forecastEndDtStr = list_of_ncfiles[-1].split('__')[1].split('__')[0]
+# forecastEndDt = datetime.datetime.strptime(forecastEndDtStr,'%Y%m%d_%H%M%S')
+# forecastEndDtDisplay = datetime.datetime.strftime(forecastEndDt, '%Y-%m-%dT%H%M%S')
 
 i=0
 for varName in varList:
@@ -201,6 +172,9 @@ for varName in varList:
 	i=i+1
 
 def fixToLocalTime(df,lat,lon):
+	if len(df) == 0:
+		return df
+
 	tf = timezonefinder.TimezoneFinder()
 	# From the lat/long, get the tz-database-style time zone name (e.g. 'America/Vancouver') or None
 	timezone_str = tf.certain_timezone_at(lat=float(lat), lng=float(lon))
@@ -215,9 +189,9 @@ def getWeatherForecastVars():
 	
 	weatherForecastVars['source'] = 'United States NOAA - NOMADS Global Forecast Model'
 	weatherForecastVars['variables'] = list(varDict.values())
-	weatherForecastVars['updated at time [UTC]'] = updatedDt
-	weatherForecastVars['forecast start time [UTC]'] = updatedDtDisplay
-	weatherForecastVars['forecast end time [UTC]'] = forecastEndDtDisplay
+	weatherForecastVars['updated at time [UTC]'] = 'updatedDt'
+	weatherForecastVars['forecast start time [UTC]'] = 'updatedDtDisplay'
+	weatherForecastVars['forecast end time [UTC]'] = 'forecastEndDtDisplay'
 	weatherForecastVars['forecast type'] = 'hourly'
 	weatherForecastVars['Number of time intervals'] = time_dim
 
@@ -311,74 +285,75 @@ def weatherForecast():
 			loc='Lat='+lat+', Lon='+lon
 
 		#Make the various graphs
-		varName = 'Air Temp [C] (2 m above surface)'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		airTempGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+		if len(localWeatherForcast_df) != 0:
+			varName = 'Air Temp [C] (2 m above surface)'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			airTempGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-		varName = 'Soil Temperature [C] - 0.1-0.4 m below ground'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		soilTempGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Soil Temperature [C] - 0.1-0.4 m below ground'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			soilTempGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-		varName = 'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		soilMoistureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Volumetric Soil Moisture Content [Fraction] - 0.1-0.4 m below ground'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			soilMoistureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-		varName = 'Rainfall Boolean [1/0]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		rainBoolGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Rainfall Boolean [1/0]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			rainBoolGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Precipitation Rate [mm]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		precipGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Precipitation Rate [mm]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			precipGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Relative Humidity [%]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		relativeHumidityGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Relative Humidity [%]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			relativeHumidityGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Dew Point Temperature [C]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		dewPointGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Dew Point Temperature [C]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			dewPointGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Pressure Reduced to MSL [Pa]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		mslPressureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Pressure Reduced to MSL [Pa]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			mslPressureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Pressure [Pa]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		pressureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Pressure [Pa]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			pressureGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Wind Speed (Gust) [m/s]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		windSpeedGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Wind Speed (Gust) [m/s]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			windSpeedGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-		varName = 'Total Cloud Cover [%]'
-		df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
-		df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
-		fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
-		cloudCoverGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+			varName = 'Total Cloud Cover [%]'
+			df = localWeatherForcast_df[['FORECAST_DATE_LOCAL',varName]]
+			df.set_index(['FORECAST_DATE_LOCAL'], inplace=True, drop=True)
+			fig = px.line(df, y=varName, title='Hourly Forecast for '+loc)
+			cloudCoverGraph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
 	except ValueError:
@@ -411,4 +386,4 @@ def weatherForecast():
 #main to run the app
 if __name__ == '__main__':
 	extra_files = [updated_data_available_file,]
-	app.run(host='0.0.0.0' , port=5000, debug=True, extra_files=extra_files)
+	app.run(host='0.0.0.0' , port=4000, debug=True, extra_files=extra_files)
